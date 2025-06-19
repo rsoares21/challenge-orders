@@ -1,0 +1,61 @@
+
+Implementação do gerenciamento dos pedidos
+
+Objetivo
+Criar um serviço "order" que vai gerenciar e calcular os produtos do pedido, sendo que os pedidos serão disponibilizados por outro produto externo A, e após nossa gestão dos pedidos realizada no serviço "order", devemos disponibilizar a outro produto externo B.
+
+Descrição
+Precisamos disponibilizar uma integração com o produto externo A para o recebimento dos pedidos, para realizar em nosso produto a gestão e cálculo do valor total dos produtos, somando o valor de cada produto dentro do pedido. E será necessário disponibilizar uma consulta dos pedidos e produtos, junto com seu status para o produto externo B receber os pedidos calculados.
+
+Considerar que podemos receber 150 mil a 200 mil pedidos por dia.
+
+Informativo:
+
+Pontos extras:
+- Verificação de duplicação de pedidos.
+- Com a volumetria de pedidos é alta como garantir a disponibilidade do serviço.
+- Como podemos ter maior consistência dos dados e garantir a concorrência.
+- Verificar se com essa volumetria pode engargalar o banco escolhido.
+
+Soluções propostas
+- Implementação dos requisitos mencionados.
+  - Considerar que para chegar na solução pode elaborar da forma que considerar mais adequada, os pontos listados são apenas um direcionamento.
+- Utilizar os protocolos de comunicação que considerar adequados.
+- Considerar boas práticas.
+- Considerar um novo desenho do modelo final que desenvolveu, para saber quais adequações considerou serem feitas para atingir o objetivo.
+- Implementação apenas do serviço "order", não tem necessidade de implementar sistemas externos.
+
+Tecnologias:
+- O sistema deve ser construído usando Java com Spring Boot.
+- Pode escolher qual banco de dados utilizar, o que considerar mais adequado.
+- Pode utilizar qualquer biblioteca que considerar adequada para atingir o objetivo.
+
+Entregáveis
+- Considerar uma entrega rápida, pode ser apresentado o código no momento da entrevista compartilhando a tela.
+  - Ou pode ser disponibilizado no git.
+- Deixar rodando na máquina e exemplos das integrações externas A e B.
+- Defina final da solução está pronto.
+- Pode aplicar mudanças conforme considerar mais adequado no desenho apresentado inicial.
+
+Desenho da Arquitetura – Exemplo
+
+Produto Externo A
+[Sistema Externo]
+Sistema externo responsável por disponibilizar os pedidos
+
+↓
+
+order
+[Container: Java Spring Boot]
+Responsável pela gestão dos pedidos e disponibilizar a consulta
+
+↓
+
+order (local ??)
+Armazenamento de informações dos pedidos
+
+↓
+
+Produto Externo B
+[Sistema Externo]
+Sistema externo precisa receber os pedidos já calculados
