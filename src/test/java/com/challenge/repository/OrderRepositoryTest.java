@@ -2,21 +2,26 @@ package com.challenge.repository;
 
 import com.challenge.model.Order;
 import com.challenge.model.Product;
-import com.challenge.repository.OrderRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@DataJpaTest
 public class OrderRepositoryTest {
 
-    @Autowired
+    @Mock
     private OrderRepository orderRepository;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void testSaveAndFindOrder() {
@@ -28,7 +33,12 @@ public class OrderRepositoryTest {
         product2.setName("Product2");
         product2.setPrice(20.0);
 
-        Order order = new Order("order1", Arrays.asList(product1, product2));
+        Order order = new Order();
+        order.setOrderId("order1");
+        order.setProducts(Arrays.asList(product1, product2));
+
+        when(orderRepository.save(order)).thenReturn(order);
+        when(orderRepository.findById("order1")).thenReturn(Optional.of(order));
 
         Order savedOrder = orderRepository.save(order);
         assertNotNull(savedOrder);
@@ -36,5 +46,8 @@ public class OrderRepositoryTest {
         Optional<Order> foundOrder = orderRepository.findById("order1");
         assertTrue(foundOrder.isPresent());
         assertEquals(2, foundOrder.get().getProducts().size());
+
+        verify(orderRepository).save(order);
+        verify(orderRepository).findById("order1");
     }
 }

@@ -3,6 +3,7 @@ package com.challenge.service;
 import com.challenge.model.Order;
 import com.challenge.model.Product;
 import com.challenge.model.OrderStatus;
+import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -10,16 +11,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class OrderServiceImpl implements OrderService {
 
-    private Set<String> orderIds = new HashSet<>();
-    private ConcurrentMap<String, String> orderStatusMap = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, OrderStatus> orderStatusEnumMap = new ConcurrentHashMap<>();
-    private List<Order> orders = new ArrayList<>();
+    private final Set<String> orderIds = Collections.synchronizedSet(new HashSet<>());
+    private final ConcurrentMap<String, OrderStatus> orderStatusEnumMap = new ConcurrentHashMap<>();
+    private final List<Order> orders = new CopyOnWriteArrayList<>();
 
     @Override
     public double calculateTotalValue(Order order) {
+        if (order.getProducts() == null) {
+            return 0.0;
+        }
         return order.getProducts().stream()
                 .mapToDouble(Product::getPrice)
                 .sum();
@@ -27,23 +35,23 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void addOrder(Order order) {
-        orderIds.add(order.getOrderId());
+        if (order == null || order.getOrderId() == null) {
+            throw new NullPointerException("Order or Order ID cannot be null");
+        }
+        synchronized (orderIds) {
+            if (orderIds.contains(order.getOrderId())) {
+                throw new IllegalArgumentException("Duplicate order ID: " + order.getOrderId());
+            }
+            orderIds.add(order.getOrderId());
+        }
         orders.add(order);
     }
 
     @Override
     public boolean isDuplicate(Order order) {
-        return orderIds.contains(order.getOrderId());
-    }
-
-    @Override
-    public void updateOrderStatus(String orderId, String status) {
-        orderStatusMap.put(orderId, status);
-    }
-
-    @Override
-    public String getOrderStatus(String orderId) {
-        return orderStatusMap.get(orderId);
+        synchronized (orderIds) {
+            return orderIds.contains(order.getOrderId());
+        }
     }
 
     @Override
@@ -65,5 +73,15 @@ public class OrderServiceImpl implements OrderService {
     public Order saveOrder(Order order) {
         addOrder(order);
         return order;
+    }
+
+    @Override
+    public void updateOrderStatusInOrder(Order order, OrderStatus status) {
+        order.setOrderStatus(status);
+    }
+
+    @Override
+    public OrderStatus getOrderStatusFromOrder(Order order) {
+        return order.getOrderStatus();
     }
 }

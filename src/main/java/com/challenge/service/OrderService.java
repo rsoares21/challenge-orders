@@ -10,12 +10,13 @@ public interface OrderService {
     void addOrder(Order order);
     boolean isDuplicate(Order order);
 
-    void updateOrderStatus(String orderId, String status);
-    String getOrderStatus(String orderId);
-
     void updateOrderStatus(String orderId, OrderStatus status);
     OrderStatus getOrderStatusEnum(String orderId);
 
     List<Order> getAllOrders();
     Order saveOrder(Order order);
+
+    // New methods to update and get order status in Order entity
+    void updateOrderStatusInOrder(Order order, OrderStatus status);
+    OrderStatus getOrderStatusFromOrder(Order order);
 }

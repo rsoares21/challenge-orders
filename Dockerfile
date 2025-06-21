@@ -1,12 +1,16 @@
-# Use official PostgreSQL image from the Docker Hub
-FROM postgres:15
+# Multi-stage Dockerfile to build and run Spring Boot app
 
-# Set environment variables for PostgreSQL
-ENV POSTGRES_USER=postgres
-ENV POSTGRES_PASSWORD=postgres
-ENV POSTGRES_DB=orderdb
+# Stage 1: Build the application
+FROM maven:3.8.6-eclipse-temurin-17 AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+#RUN mvn clean package -DskipTests
+RUN mvn clean install
 
-# Expose PostgreSQL port
-EXPOSE 5432
-
-# No additional commands needed, default entrypoint will start PostgreSQL
+# Stage 2: Run the application
+FROM eclipse-temurin:17-jdk-jammy
+WORKDIR /app
+COPY --from=build /app/target/challenge-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]

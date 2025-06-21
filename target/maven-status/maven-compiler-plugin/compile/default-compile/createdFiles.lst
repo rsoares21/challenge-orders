@@ -1,0 +1,8 @@
+com\challenge\model\OrderStatus.class
+com\challenge\service\OrderService.class
+com\challenge\model\Order.class
+com\challenge\controller\OrderController.class
+com\challenge\model\Product.class
+com\challenge\service\OrderServiceImpl.class
+com\challenge\ChallengeApplication.class
+com\challenge\repository\OrderRepository.class

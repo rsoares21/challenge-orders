@@ -43,7 +43,9 @@ public class OrderControllerTest {
         product2.setName("Product2");
         product2.setPrice(20.0);
 
-        order = new Order("order1", Arrays.asList(product1, product2));
+        order = new Order();
+        order.setOrderId("order1");
+        order.setProducts(Arrays.asList(product1, product2));    
     }
 
     @Test
@@ -62,6 +64,7 @@ public class OrderControllerTest {
 
     @Test
     public void testGetAllOrders() throws Exception {
+        order.setOrderStatus(com.challenge.model.OrderStatus.PROCESSING);
         List<Order> orders = Arrays.asList(order);
         when(orderService.getAllOrders()).thenReturn(orders);
 
