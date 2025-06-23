@@ -11,7 +11,9 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -30,6 +32,7 @@ class OrderControllerTest {
     }
 
     @Test
+    // Testa a criação de um pedido com dados válidos
     void testCreateOrder() {
         Order order = new Order();
         order.setOrderId("123");
@@ -47,6 +50,7 @@ class OrderControllerTest {
     }
 
     @Test
+    // Testa a criação de um pedido nulo, esperando uma exceção NullPointerException
     void testCreateOrder_NullOrder() {
         when(orderService.saveOrder(null)).thenThrow(new NullPointerException("Order cannot be null"));
 
@@ -56,6 +60,7 @@ class OrderControllerTest {
     }
 
     @Test
+    // Testa a recuperação de pedidos com status "NEW"
     void testGetNewOrders() {
         Order order1 = new Order();
         order1.setOrderId("123");
@@ -79,6 +84,7 @@ class OrderControllerTest {
     }
 
     @Test
+    // Testa a recuperação de pedidos com status "NEW" quando a lista está vazia
     void testGetNewOrders_EmptyList() {
         when(orderService.getNewOrders()).thenReturn(Collections.emptyList());
 

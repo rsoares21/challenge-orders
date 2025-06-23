@@ -5,13 +5,13 @@ import com.challenge.model.OrderStatus;
 import com.challenge.model.Product;
 import com.challenge.repository.OrderRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 
@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 public class OrderControllerIntegrationTest {
 
     @Autowired
@@ -31,11 +32,6 @@ public class OrderControllerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @BeforeEach
-    void setUp() {
-        orderRepository.deleteAll();
-    }
 
     @Test
     void testCreateOrder() throws Exception {

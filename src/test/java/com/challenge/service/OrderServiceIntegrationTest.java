@@ -27,7 +27,7 @@ public class OrderServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        orderRepository.deleteAll();
+        // Removed manual cleanup since @Transactional will rollback after each test
     }
 
     @Test
