@@ -20,7 +20,17 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    @Transactional
+    /**
+     * Método transacional para salvar um pedido.
+     * 
+     * Usa o nível de isolamento REPEATABLE_READ para garantir que durante a transação:
+     * - Leituras repetidas retornam os mesmos dados (prevenção de non-repeatable reads).
+     * - Evita leituras sujas (dirty reads).
+     * - Pode permitir phantom reads, mas reduz inconsistências em ambientes concorrentes.
+     * 
+     * Este nível é um bom equilíbrio entre consistência e desempenho para operações de pedido.
+     */
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public Order saveOrder(Order order) {
 
         if (order == null || order.getOrderId() == null) {
