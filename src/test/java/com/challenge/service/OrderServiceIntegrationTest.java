@@ -4,7 +4,6 @@ import com.challenge.model.Order;
 import com.challenge.model.OrderStatus;
 import com.challenge.model.Product;
 import com.challenge.repository.OrderRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,11 +23,6 @@ public class OrderServiceIntegrationTest {
 
     @Autowired
     private OrderRepository orderRepository;
-
-    @BeforeEach
-    void setUp() {
-        // Removed manual cleanup since @Transactional will rollback after each test
-    }
 
     @Test
     void testSaveOrderAndRetrieve() {
@@ -69,4 +63,34 @@ public class OrderServiceIntegrationTest {
         assertTrue(newOrders.stream().anyMatch(o -> o.getOrderId().equals("order1")));
         assertTrue(newOrders.stream().anyMatch(o -> o.getOrderId().equals("order2")));
     }
+
+    @Test
+    void testOptimisticLocking() {
+        Order order = new Order();
+        order.setOrderId("lockTest");
+        Product product = new Product();
+        product.setPrice(50.0);
+        order.setProducts(Arrays.asList(product));
+        order.setOrderStatus(OrderStatus.NEW);
+        order.setTotalValue(50.0);
+
+        Order savedOrder = orderService.saveOrder(order);
+
+        // Simula duas transações concorrentes carregando o mesmo pedido
+        Order orderTx1 = orderRepository.findById("lockTest").orElseThrow();
+        Order orderTx2 = orderRepository.findById("lockTest").orElseThrow();
+
+        // Modifica na primeira transação e salva
+        orderTx1.setTotalValue(60.0);
+        orderRepository.save(orderTx1);
+
+        // Modifica na segunda transação e tenta salvar, deve lançar exceção
+        orderTx2.setTotalValue(70.0);
+        Exception exception = assertThrows(org.springframework.orm.ObjectOptimisticLockingFailureException.class, () -> {
+            orderRepository.saveAndFlush(orderTx2);
+        });
+
+        assertNotNull(exception);
+    }
+
 }

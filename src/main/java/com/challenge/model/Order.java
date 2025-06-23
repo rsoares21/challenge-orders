@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,6 +28,18 @@ public class Order {
     @Id
     @Column(name = "order_id", nullable = false, unique = true)
     private String orderId;
+
+    @Version
+    private Long version; // Usado pelo Hibernate para Optimistic Locking. É incrementado automaticamente a cada atualização.
+
+    /*
+     * Mecanismo de Optimistic Locking:
+     * - O campo version é verificado durante operações de atualização/exclusão.
+     * - O Hibernate inclui a versão na cláusula WHERE para garantir que o registro não foi modificado desde que foi lido.
+     * - Se a versão não corresponder (ou seja, outra transação atualizou o registro), a atualização afeta 0 linhas.
+     * - O Hibernate detecta isso e lança uma ObjectOptimisticLockingFailureException.
+     * - Isso previne atualizações perdidas e garante consistência de dados em ambientes concorrentes.
+     */
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(
