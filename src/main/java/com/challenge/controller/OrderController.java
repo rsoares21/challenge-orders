@@ -24,8 +24,9 @@ public class OrderController {
 
     // Endpoint for external product B to retrieve processed orders
     @GetMapping
-    public ResponseEntity<List<Order>> getAllOrders() {
-        List<Order> orders = orderService.getAllOrders();
+    public ResponseEntity<List<Order>> getNewOrders() {
+        List<Order> orders = orderService.getNewOrders();
         return ResponseEntity.ok(orders);
     }
+
 }

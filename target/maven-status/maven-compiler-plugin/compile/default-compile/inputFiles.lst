@@ -2,6 +2,8 @@ D:\workspace\ambev\src\main\java\com\challenge\service\OrderServiceImpl.java
 D:\workspace\ambev\src\main\java\com\challenge\controller\OrderController.java
 D:\workspace\ambev\src\main\java\com\challenge\service\OrderService.java
 D:\workspace\ambev\src\main\java\com\challenge\model\Order.java
+D:\workspace\ambev\src\main\java\com\challenge\config\RabbitMQConfig.java
+D:\workspace\ambev\src\main\java\com\challenge\messaging\OrderMessageListener.java
 D:\workspace\ambev\src\main\java\com\challenge\ChallengeApplication.java
 D:\workspace\ambev\src\main\java\com\challenge\model\OrderStatus.java
 D:\workspace\ambev\src\main\java\com\challenge\model\Product.java

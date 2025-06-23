@@ -22,7 +22,7 @@ public class OrderMessageListener {
     public void receiveOrderMessage(String message) {
         try {
             Order order = objectMapper.readValue(message, Order.class);
-            orderService.addOrder(order);
+            orderService.saveOrder(order);
             System.out.println("Received and processed order: " + order.getOrderId());
         } catch (Exception e) {
             System.err.println("Failed to process order message: " + e.getMessage());

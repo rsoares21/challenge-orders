@@ -5,45 +5,73 @@ import com.challenge.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
+import org.mockito.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-public class OrderMessageListenerTest {
+class OrderMessageListenerTest {
 
+    @Mock
     private OrderService orderService;
+
+    @Mock
     private ObjectMapper objectMapper;
-    private OrderMessageListener listener;
+
+    @InjectMocks
+    private OrderMessageListener orderMessageListener;
 
     @BeforeEach
-    public void setup() {
-        orderService = mock(OrderService.class);
-        objectMapper = new ObjectMapper();
-        listener = new OrderMessageListener(orderService, objectMapper);
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testReceiveOrderMessage_validMessage_callsAddOrder() throws Exception {
-        String json = "{\"orderId\":\"order123\",\"products\":[]}";
+    void testReceiveOrderMessage_Success() throws Exception {
+        String message = "{\"orderId\":\"123\"}";
+        Order order = new Order();
+        order.setOrderId("123");
 
-        listener.receiveOrderMessage(json);
+        when(objectMapper.readValue(message, Order.class)).thenReturn(order);
 
-        ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
-        verify(orderService, times(1)).addOrder(orderCaptor.capture());
+        orderMessageListener.receiveOrderMessage(message);
 
-        Order capturedOrder = orderCaptor.getValue();
-        assertEquals("order123", capturedOrder.getOrderId());
+        verify(objectMapper, times(1)).readValue(message, Order.class);
+        verify(orderService, times(1)).saveOrder(order);
     }
 
     @Test
-    public void testReceiveOrderMessage_invalidMessage_logsError() {
-        String invalidJson = "invalid json";
+    void testReceiveOrderMessage_Exception() throws Exception {
+        String message = "invalid json";
 
-        listener.receiveOrderMessage(invalidJson);
+        when(objectMapper.readValue(message, Order.class)).thenThrow(new RuntimeException("JSON parse error"));
 
-        // No exception thrown, error logged (manual verification or extend with logging framework)
-        verify(orderService, never()).addOrder(any());
+        orderMessageListener.receiveOrderMessage(message);
+
+        verify(objectMapper, times(1)).readValue(message, Order.class);
+        verify(orderService, never()).saveOrder(any());
+    }
+
+    @Test
+    void testReceiveOrderMessage_NullMessage() throws Exception {
+        String message = null;
+
+        when(objectMapper.readValue(message, Order.class)).thenThrow(new IllegalArgumentException("Message is null"));
+
+        orderMessageListener.receiveOrderMessage(message);
+
+        verify(objectMapper, times(1)).readValue(message, Order.class);
+        verify(orderService, never()).saveOrder(any());
+    }
+
+    @Test
+    void testReceiveOrderMessage_EmptyMessage() throws Exception {
+        String message = "";
+
+        when(objectMapper.readValue(message, Order.class)).thenThrow(new IllegalArgumentException("Message is empty"));
+
+        orderMessageListener.receiveOrderMessage(message);
+
+        verify(objectMapper, times(1)).readValue(message, Order.class);
+        verify(orderService, never()).saveOrder(any());
     }
 }

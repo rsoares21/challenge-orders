@@ -1,76 +1,93 @@
 package com.challenge.controller;
 
 import com.challenge.model.Order;
-import com.challenge.model.Product;
+import com.challenge.model.OrderStatus;
 import com.challenge.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@WebMvcTest(OrderController.class)
-public class OrderControllerTest {
+class OrderControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private OrderService orderService;
 
-    private Order order;
+    @InjectMocks
+    private OrderController orderController;
 
     @BeforeEach
-    public void setup() {
-        Product product1 = new Product();
-        product1.setName("Product1");
-        product1.setPrice(10.0);
-
-        Product product2 = new Product();
-        product2.setName("Product2");
-        product2.setPrice(20.0);
-
-        order = new Order();
-        order.setOrderId("order1");
-        order.setProducts(Arrays.asList(product1, product2));    
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testCreateOrder() throws Exception {
-        when(orderService.saveOrder(any(Order.class))).thenReturn(order);
+    void testCreateOrder() {
+        Order order = new Order();
+        order.setOrderId("123");
+        order.setOrderStatus(OrderStatus.NEW);
 
-        String orderJson = "{\"orderId\":\"order1\",\"products\":[{\"name\":\"Product1\",\"price\":10.0},{\"name\":\"Product2\",\"price\":20.0}]}";
+        when(orderService.saveOrder(order)).thenReturn(order);
 
-        mockMvc.perform(post("/orders")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(orderJson))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.orderId").value("order1"))
-                .andExpect(jsonPath("$.products", hasSize(2)));
+        ResponseEntity<Order> response = orderController.createOrder(order);
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(order, response.getBody());
+
+        verify(orderService, times(1)).saveOrder(order);
     }
 
     @Test
-    public void testGetAllOrders() throws Exception {
-        order.setOrderStatus(com.challenge.model.OrderStatus.PROCESSING);
-        List<Order> orders = Arrays.asList(order);
-        when(orderService.getAllOrders()).thenReturn(orders);
+    void testCreateOrder_NullOrder() {
+        when(orderService.saveOrder(null)).thenThrow(new NullPointerException("Order cannot be null"));
 
-        mockMvc.perform(get("/orders"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].orderId").value("order1"));
+        assertThrows(NullPointerException.class, () -> orderController.createOrder(null));
+
+        verify(orderService, times(1)).saveOrder(null);
+    }
+
+    @Test
+    void testGetNewOrders() {
+        Order order1 = new Order();
+        order1.setOrderId("123");
+        order1.setOrderStatus(OrderStatus.NEW);
+
+        Order order2 = new Order();
+        order2.setOrderId("456");
+        order2.setOrderStatus(OrderStatus.NEW);
+
+        List<Order> orders = Arrays.asList(order1, order2);
+
+        when(orderService.getNewOrders()).thenReturn(orders);
+
+        ResponseEntity<List<Order>> response = orderController.getNewOrders();
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(orders, response.getBody());
+
+        verify(orderService, times(1)).getNewOrders();
+    }
+
+    @Test
+    void testGetNewOrders_EmptyList() {
+        when(orderService.getNewOrders()).thenReturn(Collections.emptyList());
+
+        ResponseEntity<List<Order>> response = orderController.getNewOrders();
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+        assertTrue(response.getBody().isEmpty());
+
+        verify(orderService, times(1)).getNewOrders();
     }
 }

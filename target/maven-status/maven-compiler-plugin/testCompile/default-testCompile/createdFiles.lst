@@ -1,3 +1,4 @@
-com\challenge\service\OrderServiceTest.class
-com\challenge\controller\OrderControllerTest.class
 com\challenge\repository\OrderRepositoryTest.class
+com\challenge\messaging\OrderMessageListenerTest.class
+com\challenge\messaging\OrderMessageListenerIntegrationTest.class
+com\challenge\controller\OrderControllerIntegrationTest.class

@@ -3,25 +3,48 @@ package com.challenge.service;
 import com.challenge.model.Order;
 import com.challenge.model.Product;
 import com.challenge.model.OrderStatus;
+import com.challenge.repository.OrderRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import org.springframework.stereotype.Service;
+import java.util.Optional;
 
 @Service
 public class OrderServiceImpl implements OrderService {
 
-    private final Set<String> orderIds = Collections.synchronizedSet(new HashSet<>());
-    private final ConcurrentMap<String, OrderStatus> orderStatusEnumMap = new ConcurrentHashMap<>();
-    private final List<Order> orders = new CopyOnWriteArrayList<>();
+    private final OrderRepository orderRepository;
+
+    public OrderServiceImpl(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
+    }
+
+    @Override
+    @Transactional
+    public Order saveOrder(Order order) {
+
+        if (order == null || order.getOrderId() == null) {
+            throw new NullPointerException("Order or Order ID cannot be null");
+        }
+        if (isDuplicate(order)) {
+            throw new IllegalArgumentException("Duplicate order ID: " + order.getOrderId());
+        }
+        double totalValue = calculateTotalValue(order);
+        order.setTotalValue(totalValue);
+        order.setOrderStatus(OrderStatus.NEW);
+        orderRepository.save(order);
+
+        return order;
+    }
+
+    @Override
+    public boolean isDuplicate(Order order) {
+        if (order == null || order.getOrderId() == null) {
+            return false;
+        }
+        Optional<Order> existingOrder = orderRepository.findById(order.getOrderId());
+        return existingOrder.isPresent();
+    }
 
     @Override
     public double calculateTotalValue(Order order) {
@@ -34,54 +57,8 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public void addOrder(Order order) {
-        if (order == null || order.getOrderId() == null) {
-            throw new NullPointerException("Order or Order ID cannot be null");
-        }
-        synchronized (orderIds) {
-            if (orderIds.contains(order.getOrderId())) {
-                throw new IllegalArgumentException("Duplicate order ID: " + order.getOrderId());
-            }
-            orderIds.add(order.getOrderId());
-        }
-        orders.add(order);
+    public List<Order> getNewOrders() {
+        return orderRepository.findByOrderStatus(OrderStatus.NEW);
     }
 
-    @Override
-    public boolean isDuplicate(Order order) {
-        synchronized (orderIds) {
-            return orderIds.contains(order.getOrderId());
-        }
-    }
-
-    @Override
-    public void updateOrderStatus(String orderId, OrderStatus status) {
-        orderStatusEnumMap.put(orderId, status);
-    }
-
-    @Override
-    public OrderStatus getOrderStatusEnum(String orderId) {
-        return orderStatusEnumMap.get(orderId);
-    }
-
-    @Override
-    public List<Order> getAllOrders() {
-        return new ArrayList<>(orders);
-    }
-
-    @Override
-    public Order saveOrder(Order order) {
-        addOrder(order);
-        return order;
-    }
-
-    @Override
-    public void updateOrderStatusInOrder(Order order, OrderStatus status) {
-        order.setOrderStatus(status);
-    }
-
-    @Override
-    public OrderStatus getOrderStatusFromOrder(Order order) {
-        return order.getOrderStatus();
-    }
 }
