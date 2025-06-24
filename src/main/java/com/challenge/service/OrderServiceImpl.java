@@ -4,19 +4,21 @@ import com.challenge.model.Order;
 import com.challenge.model.Product;
 import com.challenge.model.OrderStatus;
 import com.challenge.repository.OrderRepository;
+import com.challenge.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
 
-    public OrderServiceImpl(OrderRepository orderRepository) {
+    public OrderServiceImpl(OrderRepository orderRepository, ProductRepository productRepository) {
         this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
@@ -32,13 +34,23 @@ public class OrderServiceImpl implements OrderService {
      */
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public Order saveOrder(Order order) {
+        // Fetch products from DB to get current prices
+        List<Product> fetchedProducts = productRepository.findAllById(
+            order.getProducts().stream().map(Product::getId).toList()
+        );
 
-        if (order == null || order.getOrderId() == null) {
-            throw new NullPointerException("Order or Order ID cannot be null");
+        if (fetchedProducts.size() != order.getProducts().size()) {
+            // Find missing product IDs
+            List<Long> fetchedIds = fetchedProducts.stream().map(Product::getId).toList();
+            for (Product p : order.getProducts()) {
+                if (!fetchedIds.contains(p.getId())) {
+                    throw new RuntimeException("Produto não encontrado com id: " + p.getId());
+                }
+            }
         }
-        if (isDuplicate(order)) {
-            throw new IllegalArgumentException("Duplicate order ID: " + order.getOrderId());
-        }
+
+        order.setProducts(fetchedProducts);
+
         double totalValue = calculateTotalValue(order);
         order.setTotalValue(totalValue);
         order.setOrderStatus(OrderStatus.NEW);
@@ -48,19 +60,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public boolean isDuplicate(Order order) {
-        if (order == null || order.getOrderId() == null) {
-            return false;
-        }
-        Optional<Order> existingOrder = orderRepository.findById(order.getOrderId());
-        return existingOrder.isPresent();
-    }
-
-    @Override
     public double calculateTotalValue(Order order) {
-        if (order.getProducts() == null) {
-            return 0.0;
-        }
         return order.getProducts().stream()
                 .mapToDouble(Product::getPrice)
                 .sum();

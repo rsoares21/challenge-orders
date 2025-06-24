@@ -29,7 +29,6 @@ class OrderMessageListenerTest {
     void testReceiveOrderMessage_Success() throws Exception {
         String message = "{\"orderId\":\"123\"}";
         Order order = new Order();
-        order.setOrderId("123");
 
         when(objectMapper.readValue(message, Order.class)).thenReturn(order);
 

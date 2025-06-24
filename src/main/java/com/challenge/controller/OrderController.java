@@ -18,6 +18,11 @@ public class OrderController {
     // Endpoint for external product A to submit orders
     @PostMapping
     public ResponseEntity<Order> createOrder(@RequestBody Order order) {
+        
+        if (order.getProducts() == null)  {
+            throw new NullPointerException("A lista de produtos não pode ser nula ou vazia.");
+        }
+
         Order savedOrder = orderService.saveOrder(order);
         return ResponseEntity.ok(savedOrder);
     }

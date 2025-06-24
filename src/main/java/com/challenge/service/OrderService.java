@@ -6,7 +6,6 @@ import java.util.List;
 
 public interface OrderService {
     Order saveOrder(Order order);
-    boolean isDuplicate(Order order);
     double calculateTotalValue(Order order);
     List<Order> getNewOrders();
 }

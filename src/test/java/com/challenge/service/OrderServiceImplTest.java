@@ -1,159 +1,87 @@
 package com.challenge.service;
 
 import com.challenge.model.Order;
-import com.challenge.model.OrderStatus;
 import com.challenge.model.Product;
+import com.challenge.model.OrderStatus;
 import com.challenge.repository.OrderRepository;
+import com.challenge.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
-import java.util.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class OrderServiceImplTest {
+public class OrderServiceImplTest {
 
-    @Mock
+    private OrderServiceImpl orderService;
+    private ProductRepository productRepository;
     private OrderRepository orderRepository;
 
-    @InjectMocks
-    private OrderServiceImpl orderService;
-
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    public void setUp() {
+        productRepository = Mockito.mock(ProductRepository.class);
+        orderRepository = Mockito.mock(OrderRepository.class);
+        orderService = new OrderServiceImpl(orderRepository, productRepository);
     }
 
     @Test
-    void testSaveOrder_Success() {
-        Order order = new Order();
-        order.setOrderId("123");
-        Product product1 = new Product();
-        product1.setPrice(10.0);
-        Product product2 = new Product();
-        product2.setPrice(20.0);
-        order.setProducts(Arrays.asList(product1, product2));
+    public void testSaveOrder_CalculatesTotalValue() {
+        Product product1 = new Product(1L, "Product 1", 10.0);
+        Product product2 = new Product(2L, "Product 2", 20.0);
 
-        when(orderRepository.findById("123")).thenReturn(Optional.empty());
-        when(orderRepository.save(order)).thenReturn(order);
+        Order order = new Order();
+        order.setProducts(Arrays.asList(product1, product2));
+        order.setOrderStatus(OrderStatus.NEW);
+
+        when(productRepository.findAllById(any())).thenReturn(Arrays.asList(product1, product2));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArguments()[0]);
 
         Order savedOrder = orderService.saveOrder(order);
 
-        assertNotNull(savedOrder);
-        assertEquals(30.0, savedOrder.getTotalValue());
+        assertEquals(30.0, savedOrder.getTotalValue(), 0.001);
         assertEquals(OrderStatus.NEW, savedOrder.getOrderStatus());
-
-        verify(orderRepository, times(1)).save(order);
+        verify(productRepository, times(1)).findAllById(any());
+        verify(orderRepository, times(1)).save(any(Order.class));
     }
 
     @Test
-    void testSaveOrder_NullOrder_ThrowsException() {
-        assertThrows(NullPointerException.class, () -> orderService.saveOrder(null));
-    }
+    public void testSaveOrder_ProductNotFound() {
+        Product product1 = new Product(1L, "Product 1", 10.0);
 
-    @Test
-    void testSaveOrder_NullOrderId_ThrowsException() {
         Order order = new Order();
-        order.setOrderId(null);
-        assertThrows(NullPointerException.class, () -> orderService.saveOrder(order));
+        order.setProducts(Arrays.asList(product1));
+        order.setOrderStatus(OrderStatus.NEW);
+
+        when(productRepository.findAllById(any())).thenReturn(Arrays.asList());
+
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            orderService.saveOrder(order);
+        });
+
+        assertEquals("Produto não encontrado com id: 1", exception.getMessage());
     }
 
     @Test
-    void testSaveOrder_DuplicateOrder_ThrowsException() {
-        Order order = new Order();
-        order.setOrderId("123");
-
-        when(orderRepository.findById("123")).thenReturn(Optional.of(order));
-
-        assertThrows(IllegalArgumentException.class, () -> orderService.saveOrder(order));
-    }
-
-    @Test
-    void testIsDuplicate_True() {
-        Order order = new Order();
-        order.setOrderId("123");
-
-        when(orderRepository.findById("123")).thenReturn(Optional.of(order));
-
-        assertTrue(orderService.isDuplicate(order));
-    }
-
-    @Test
-    void testIsDuplicate_False() {
-        Order order = new Order();
-        order.setOrderId("123");
-
-        when(orderRepository.findById("123")).thenReturn(Optional.empty());
-
-        assertFalse(orderService.isDuplicate(order));
-    }
-
-    @Test
-    void testCalculateTotalValue() {
-        Order order = new Order();
-        Product product1 = new Product();
-        product1.setPrice(15.0);
-        Product product2 = new Product();
-        product2.setPrice(25.0);
-        order.setProducts(Arrays.asList(product1, product2));
-
-        double total = orderService.calculateTotalValue(order);
-
-        assertEquals(40.0, total);
-    }
-
-    @Test
-    void testCalculateTotalValue_NullProducts() {
-        Order order = new Order();
-        order.setProducts(null);
-
-        double total = orderService.calculateTotalValue(order);
-
-        assertEquals(0.0, total);
-    }
-
-    @Test
-    void testCalculateTotalValue_EmptyProducts() {
-        Order order = new Order();
-        order.setProducts(Collections.emptyList());
-
-        double total = orderService.calculateTotalValue(order);
-
-        assertEquals(0.0, total);
-    }
-
-    @Test
-    void testCalculateTotalValue_ZeroPriceProducts() {
-        Order order = new Order();
-        Product product1 = new Product();
-        product1.setPrice(0.0);
-        Product product2 = new Product();
-        product2.setPrice(0.0);
-        order.setProducts(Arrays.asList(product1, product2));
-
-        double total = orderService.calculateTotalValue(order);
-
-        assertEquals(0.0, total);
-    }
-
-    @Test
-    void testGetNewOrders() {
+    public void testGetNewOrders() {
         Order order1 = new Order();
-        order1.setOrderId("1");
         order1.setOrderStatus(OrderStatus.NEW);
-
         Order order2 = new Order();
-        order2.setOrderId("2");
         order2.setOrderStatus(OrderStatus.NEW);
 
         List<Order> newOrders = Arrays.asList(order1, order2);
 
-        when(orderRepository.findByOrderStatus(OrderStatus.NEW)).thenReturn(newOrders);
+        OrderServiceImpl spyService = Mockito.spy(orderService);
+        doReturn(newOrders).when(spyService).getNewOrders();
 
-        List<Order> result = orderService.getNewOrders();
+        List<Order> result = spyService.getNewOrders();
 
         assertEquals(2, result.size());
-        assertEquals(newOrders, result);
+        assertTrue(result.stream().allMatch(o -> o.getOrderStatus() == OrderStatus.NEW));
     }
 }

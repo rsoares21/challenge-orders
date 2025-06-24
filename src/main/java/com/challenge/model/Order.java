@@ -12,6 +12,8 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Version;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,11 +28,9 @@ import java.util.List;
 public class Order {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id", nullable = false, unique = true)
-    private String orderId;
-
-    @Version
-    private Long version; // Usado pelo Hibernate para Optimistic Locking. É incrementado automaticamente a cada atualização.
+    private Long orderId;
 
     /*
      * Mecanismo de Optimistic Locking:
@@ -40,6 +40,8 @@ public class Order {
      * - O Hibernate detecta isso e lança uma ObjectOptimisticLockingFailureException.
      * - Isso previne atualizações perdidas e garante consistência de dados em ambientes concorrentes.
      */
+    @Version
+    private Long version; // Usado pelo Hibernate para Optimistic Locking. É incrementado automaticamente a cada atualização.
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(
