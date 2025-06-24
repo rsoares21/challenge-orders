@@ -68,6 +68,30 @@ public class OrderServiceImplTest {
     }
 
     @Test
+    public void testSaveOrder_EmptyProductList() {
+        Order order = new Order();
+        order.setProducts(Arrays.asList());
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            orderService.saveOrder(order);
+        });
+
+        assertEquals("A order deve conter pelo menos um produto.", exception.getMessage());
+    }
+
+    @Test
+    public void testSaveOrder_NullProductList() {
+        Order order = new Order();
+        order.setProducts(null);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            orderService.saveOrder(order);
+        });
+
+        assertEquals("A order deve conter pelo menos um produto.", exception.getMessage());
+    }
+
+    @Test
     public void testGetNewOrders() {
         Order order1 = new Order();
         order1.setOrderStatus(OrderStatus.NEW);

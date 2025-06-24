@@ -34,6 +34,10 @@ public class OrderServiceImpl implements OrderService {
      */
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public Order saveOrder(Order order) {
+        if (order.getProducts() == null || order.getProducts().isEmpty()) {
+            throw new RuntimeException("A order deve conter pelo menos um produto.");
+        }
+
         // Fetch products from DB to get current prices
         List<Product> fetchedProducts = productRepository.findAllById(
             order.getProducts().stream().map(Product::getId).toList()
