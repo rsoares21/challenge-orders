@@ -5,6 +5,8 @@ import com.challenge.model.Product;
 import com.challenge.model.OrderStatus;
 import com.challenge.repository.OrderRepository;
 import com.challenge.repository.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,7 @@ public class OrderServiceImpl implements OrderService {
      * Este nível é um bom equilíbrio entre consistência e desempenho para operações de pedido.
      */
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    @CacheEvict(value = "newOrders", allEntries = true)
     public Order saveOrder(Order order) {
         if (order.getProducts() == null || order.getProducts().isEmpty()) {
             throw new RuntimeException("A order deve conter pelo menos um produto.");
@@ -71,6 +74,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Cacheable(value = "newOrders")
     public List<Order> getNewOrders() {
         return orderRepository.findByOrderStatus(OrderStatus.NEW);
     }
